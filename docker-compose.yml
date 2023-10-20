@@ -4,10 +4,11 @@ version: "3"
 #   - Prowlarr: communicates with torrents sites
 #   - Sonarr: Manages TV Shows and requests missing/better ones
 #   - Radarr: Manages TV Shows and requests missing/better ones
-#   - Gluetun: Generic VPN container
 #   - Plex: Media hoster for movies & tv shows
 #   - Transmission: Torrent downloader
 #   - Requestrr: Discord bot for Sonarr & Radarr
+#   - Gluetun: Generic VPN container that cloaks services that need it
+#     (everything except plex)
 #
 # You can configure the services by accessing their Web UIs:
 #   - Plex: localhost:32400/web
@@ -17,15 +18,10 @@ version: "3"
 #   - Sonarr: localhost:9091
 #   - Requestrr: localhost:4545
 #
-# Set the appropriate timezone where the TZ variable is present
+# Basic Variables can be set by copying the env-example file
+# to .env and configuring the variables there.
 #
-# Set your folders as follows
-#   - torrent downloads as the :downloads volume (both Plex & Transmission)
-#   - Movies as the :movies volume for both Plex & Radarr
-#   - TV Shows as the :tv volume for both Plex & Radarr
-#
-#   Basic Variables can be set by copying the env-example file
-#   to .env and configuring the variables there.
+# Alternatively, set your variables directly in this file.
 
 services:
   privateer-vpn:
