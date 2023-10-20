@@ -1,0 +1,145 @@
+version: "3"
+
+# The config automatically sets up the following:
+#   - Prowlarr: communicates with torrents sites
+#   - Sonarr: Manages TV Shows and requests missing/better ones
+#   - Radarr: Manages TV Shows and requests missing/better ones
+#   - Gluetun: Generic VPN container
+#   - Plex: Media hoster for movies & tv shows
+#   - Transmission: Torrent downloader
+#   - Requestrr: Discord bot for Sonarr & Radarr
+#
+# You can configure the services by accessing their Web UIs:
+#   - Plex: localhost:32400/web
+#   - Prowlarr: localhost:9696
+#   - Radarr: localhost:7878
+#   - Sonarr: localhost:8989
+#   - Sonarr: localhost:9091
+#   - Requestrr: localhost:4545
+#
+# Set the appropriate timezone where the TZ variable is present
+#
+# Set your folders as follows
+#   - torrent downloads as the :downloads volume (both Plex & Transmission)
+#   - Movies as the :movies volume for both Plex & Radarr
+#   - TV Shows as the :tv volume for both Plex & Radarr
+#
+#   Basic Variables can be set by copying the env-example file
+#   to .env and configuring the variables there.
+
+services:
+  privateer-vpn:
+    image: qmcgaw/gluetun
+    container_name: privateer-vpn
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - gluetun:/gluetun
+    ports:
+      # Prowlarr ports:
+      - 9696:9696 # prowlarr Webui
+      # Transmission ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+      # Sonarr ports:
+      - 8989:8989
+      # Radarr ports:
+      - 7878:7878
+      # Requestrr ports:
+      - 4545:4545
+    environment:
+      - VPN_SERVICE_PROVIDER=private internet access
+      - OPENVPN_USER=${VPN_USER}
+      - OPENVPN_PASSWORD=${VPN_PASSWD}
+      - REGION=${VPN_REGION}
+    restart: unless-stopped
+
+  privateer-prowlarr:
+    image: linuxserver/prowlarr
+    container_name: privateer-prowlarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+    volumes:
+      - prowlarr-conf:/config
+      - ${TORRENT_TMP_DIR}:/downloads
+    network_mode: service:privateer-vpn
+    restart: unless-stopped
+
+  privateer-torrent:
+    image: linuxserver/transmission
+    container_name: privateer-torrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+    volumes:
+      - torrent-conf:/config
+    network_mode: service:privateer-vpn
+    restart: unless-stopped
+
+  privateer-sonarr:
+    image: linuxserver/sonarr
+    container_name: privateer-sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - sonarr-conf:/config
+      - ${TV_DIR}:/tv
+      - ${TORRENT_TMP_DIR}:/downloads
+    network_mode: service:privateer-vpn
+    restart: unless-stopped
+
+  privateer-radarr:
+    image: linuxserver/radarr
+    container_name: privateer-radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - radarr-conf:/config
+      - ${MOVIE_DIR}:/movies
+      - ${TORRENT_TMP_DIR}:/downloads
+    network_mode: service:privateer-vpn
+    restart: unless-stopped
+
+  privateer-plex:
+    image: linuxserver/plex
+    container_name: privateer-plex
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+    volumes:
+      - plex-conf:/config
+      - ${MOVIE_DIR}:/movies
+      - ${TV_DIR}:/tv
+    restart: unless-stopped
+
+  privateer-discord:
+    image: linuxserver/requestrr
+    container_name: privateer-discord
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+    volumes:
+      - requestrr-conf:/config
+    network_mode: service:privateer-vpn
+    restart: unless-stopped
+
+volumes:
+  gluetun:
+  prowlarr-conf:
+  torrent-conf:
+  sonarr-conf:
+  radarr-conf:
+  requestrr-conf:
+  plex-conf:
+
+networks:
+  privateer-clearnet:

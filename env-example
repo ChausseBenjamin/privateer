@@ -1,0 +1,13 @@
+# Where you want your TV Shows on your computer
+TV_DIR=
+# Where you want your Movies on your computer
+MOVIE_DIR=
+# Where should your Torrents be downloaded (before getting moved)
+TORRENT_TMP_DIR=
+# Your Timezone
+TIMEZONE=
+# Your VPN Service Credentials
+VPN_USER=
+VPN_PASSWD=
+# Selected VPN Region
+VPN_REGION=
