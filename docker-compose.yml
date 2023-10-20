@@ -140,6 +140,3 @@ volumes:
   radarr-conf:
   requestrr-conf:
   plex-conf:
-
-networks:
-  privateer-clearnet:
