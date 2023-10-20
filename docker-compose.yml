@@ -3,7 +3,7 @@ version: "3"
 # The config automatically sets up the following:
 #   - Prowlarr: communicates with torrents sites
 #   - Sonarr: Manages TV Shows and requests missing/better ones
-#   - Radarr: Manages TV Shows and requests missing/better ones
+#   - Radarr: Manages Movies and requests missing/better ones
 #   - Plex: Media hoster for movies & tv shows
 #   - Transmission: Torrent downloader
 #   - Requestrr: Discord bot for Sonarr & Radarr
