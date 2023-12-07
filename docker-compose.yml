@@ -119,6 +119,8 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
+      - NVIDIA_VISIBLE_DEVICES=all
+      - VERSION=latest
       - TZ=${TIMEZONE}
     volumes:
       - plex-conf:/config
