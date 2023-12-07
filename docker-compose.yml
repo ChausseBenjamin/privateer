@@ -34,10 +34,10 @@ services:
     ports:
       # Prowlarr ports:
       - 9696:9696
-      # Transmission ports:
+      # Transmission ports (peer default: 40455)
       - 9091:9091
-      - 51413:51413
-      - 51413:51413/udp
+      - 40455:40455
+      - 40455:40455/udp
       # Sonarr ports:
       - 8989:8989
       # Radarr ports:
@@ -49,6 +49,9 @@ services:
       - OPENVPN_USER=${VPN_USER}
       - OPENVPN_PASSWORD=${VPN_PASSWD}
       - REGION=${VPN_REGION}
+      - VPN_PORT_FORWARDING=on
+    networks:
+      - privateer-net
     restart: unless-stopped
 
   privateer-prowlarr:
@@ -71,7 +74,10 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TIMEZONE}
+      - PEERPORT=40455
+      - DOCKER_MODS=linuxserver/mods:transmission-floodui
     volumes:
+      - ${TORRENT_TMP_DIR}:/downloads
       - torrent-conf:/config
     network_mode: service:privateer-vpn
     restart: unless-stopped
@@ -120,6 +126,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TIMEZONE}
+      - VERSION=latest
     volumes:
       - plex-conf:/config
       - ${MOVIE_DIR}:/movies
@@ -146,3 +153,5 @@ volumes:
   radarr-conf:
   requestrr-conf:
   plex-conf:
+networks:
+  privateer-net:
