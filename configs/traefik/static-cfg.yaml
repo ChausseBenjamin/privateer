@@ -1,0 +1,14 @@
+http:
+  routers:
+    plex:
+      rule: Host(`plex.{{ env "DOMAIN" }}`)
+      service: plex
+      tls:
+        certResolver: cloudflare
+      entryPoints:
+        - websecure
+  services:
+    plex:
+      loadBalancer:
+        servers:
+          - url: 'http://host.docker.internal:32400'

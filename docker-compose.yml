@@ -1,0 +1,213 @@
+---
+services:
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik
+    networks:
+      - highseas
+    ports:
+      - 80:80 # http
+      - 443:443 # https
+      - 8080:8080 # dashboard (LAN only, do not expose)
+    environment:
+      - CF_DNS_API_TOKEN=${CLOUDFLARE_TOKEN}
+      - DOMAIN=${DOMAIN}
+      - EMAIL=${EMAIL}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./configs/traefik/traefik.yaml:/etc/traefik/traefik.yaml
+      - ./configs/traefik/static-cfg.yaml:/etc/traefik/static-cfg.yaml
+      - ./configs/traefik/certs:/var/traefik/certs:rw
+    restart: unless-stopped
+
+  resolver:
+    image: linuxserver/prowlarr:latest
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+    volumes:
+      - ./configs/prowlarr:/config
+      - ${TORRENT_TMP_DIR}:/downloads
+    networks:
+      - highseas
+    ports:
+      - 9696:9696
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.resolve.rule=Host(`resolve.${DOMAIN}`)
+      - traefik.http.routers.resolve.tls.certresolver=cloudflare
+    restart: unless-stopped
+
+  tv:
+    image: linuxserver/sonarr:latest
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./configs/sonarr:/config
+      - ${TV_DIR}:/tv
+      - ${TORRENT_TMP_DIR}:/downloads
+    networks:
+      - highseas
+    ports:
+      - 8989:8989
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.tv.rule=Host(`tv.${DOMAIN}`)
+      - traefik.http.routers.tv.tls.certresolver=cloudflare
+    restart: unless-stopped
+
+
+  movies:
+    image: linuxserver/radarr:latest
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./configs/radarr:/config
+      - ${MOVIE_DIR}:/movies
+      - ${TORRENT_TMP_DIR}:/downloads
+    networks:
+      - highseas
+    ports:
+      - 7878:7878
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.movies.rule=Host(`movies.${DOMAIN}`)
+      - traefik.http.routers.movies.tls.certresolver=cloudflare
+    restart: unless-stopped
+
+
+  oversee:
+    image: linuxserver/overseerr:latest
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+    volumes:
+      - ./configs/overseerr:/config
+    networks:
+      - highseas
+    ports:
+      - 5055:5055
+      - 5055:5055/tcp
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.overseer.rule=Host(`manage.${DOMAIN}`)
+      - traefik.http.routers.overseer.tls.certresolver=cloudflare
+    restart: unless-stopped
+
+
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+      - JELLYFIN_PublishedServerUrl=https://watch.alcovian.com
+    volumes:
+      - ./configs/jellyfin:/config
+      - ${TV_DIR}:/tvshows
+      - ${MOVIE_DIR}:/movies
+      - ${MISC_DIR}:/misc
+    networks:
+      - highseas
+    ports:
+      - 8096:8096
+      # - 8920:8920 #optional
+      # - 7359:7359/udp #optional
+      # - 1900:1900/udp #optional
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jelly.rule=Host(`watch.${DOMAIN}`)
+      - traefik.http.routers.jelly.tls.certresolver=cloudflare
+    restart: unless-stopped
+
+  torrent:
+    build:
+      context: ./qbit-pia
+      # context: ./qbit-pia
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+      - WEBUI_PORT=4242
+      - TORRENTING_PORT=6881
+    volumes:
+      - ./configs/qbittorrent:/config
+      - ${TORRENT_TMP_DIR}:/downloads
+      - ./configs/gluetun/piaportforward.json:/etc/piaportforward.json # Sync Torrent port config from PIA
+    network_mode: service:vpn
+    depends_on:
+      - vpn # Otherwise piaconf can be empty/out-of-date
+    restart: unless-stopped
+
+  bot:
+    image: linuxserver/doplarr:latest
+    networks:
+      - highseas
+    restart: unless-stopped
+    volumes:
+      - ./configs/doplarr:/config
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+      - OVERSEERR__URL=https://oversee.alcovian.com
+      # - OVERSEERR__URL=http://localhost:5055
+      - DISCORD__TOKEN=${DISCORD_TOKEN}
+      - OVERSEERR__API=${OVERSEERR_TOKEN}
+      - PARTIAL_SEASONS=true
+
+  vpn:
+    image: qmcgaw/gluetun:latest
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./configs/gluetun:/gluetun
+    networks:
+      - highseas
+    ports:
+      # Prowlarr ports:
+      # - 9696:9696
+      # Sonarr ports:
+      # - 8989:8989
+      # Radarr ports:
+      # - 7878:7878
+      # Flaresolverr ports:
+      # - "${PORT:-8191}:8191"
+      # Overseerr ports:
+      # - 5055:5055/tcp
+      # Qbittorrent
+      - 4242:4242 # Traefik exposes the smallest port
+      - 6881:6881
+      - 6881:6881/udp
+    environment:
+      - VPN_SERVICE_PROVIDER=private internet access
+      - OPENVPN_USER=${VPN_USER}
+      - OPENVPN_PASSWORD=${VPN_PASSWD}
+      - VPN_PORT_FORWARDING=on
+      - REGION=${VPN_REGION}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.torrent.rule=Host(`torrent.${DOMAIN}`)
+      - traefik.http.routers.torrent.tls.certresolver=cloudflare
+    restart: unless-stopped
+
+  proxy:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    environment:
+      - LOG_LEVEL=info
+    networks:
+      - highseas
+    ports:
+      - 8191:8191
+    restart: unless-stopped
+
+networks:
+  highseas:
+    driver: bridge
