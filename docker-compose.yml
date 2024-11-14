@@ -172,16 +172,6 @@ services:
     networks:
       - highseas
     ports:
-      # Prowlarr ports:
-      # - 9696:9696
-      # Sonarr ports:
-      # - 8989:8989
-      # Radarr ports:
-      # - 7878:7878
-      # Flaresolverr ports:
-      # - "${PORT:-8191}:8191"
-      # Overseerr ports:
-      # - 5055:5055/tcp
       # Qbittorrent
       - 4242:4242 # Traefik exposes the smallest port
       - 6881:6881
