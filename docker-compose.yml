@@ -198,6 +198,15 @@ services:
       - 8191:8191
     restart: unless-stopped
 
+  dyndns:
+    image: mxmlndml/cloudflare-dynamic-dns:latest
+    environment:
+      - "API_KEY=${CLOUDFLARE_TOKEN}"
+      - "ZONE_ID=${CLOUDFLARE_ZONE}"
+      - "DOMAIN_NAMES=${DOMAIN}"
+      - "RECORD_TYPES=A"
+      - "INTERVAL=5"
+
 networks:
   highseas:
     driver: bridge
