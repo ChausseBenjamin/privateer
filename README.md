@@ -2,16 +2,19 @@
 
 ## Services
 
-### **Traefik** ([traefik][12])
+### **traefik** ([traefik][12])
 - Routes all traffic through port 443 (https) to minimize open ports
 - Auto-renews https certificates before they expire
     (require a cloudflare DNS provider)
 
-### **Dyndns** ([cloudflare-dynamic-dns][2]):
+### **dyndns** ([cloudflare-dynamic-dns][2]):
 - Updates cloudflare DNS records with the host's public IP address
 
+### sablier ([sablier][14]):
+- Automatically shuts down user facing services when they are not in use
+
 ### **vpn** ([gluetun][3])
-- Protects sensitive connection with a VPN
+- Protects sensitive connections with a VPN
 
 ### **torrent** ([qbittorrent][4])
 - Downloads and seeds requested content
@@ -23,14 +26,14 @@
 - Automatically configures torrent sites for requesters (sonarr + radarr)
 
 ### **movies** ([radarr][7])
-- Automatic fetching of requested movies
+- Automatically fetches requested movies
 
 ### **tv** ([sonarr][8])
-- Automatic fetching of requested TV Shows
+- Automatically fetches requested TV Shows
 
 ### **oversee** ([overseerr][9])
-- Manage multiple users and limit how many requests they can make
-- Also: necessary for discord integration
+- Manages users and limit how many request/month they can make
+- Also: necessary for discord bot integration
 
 ### **bot** ([doplarr][10])
 - Discord bot that allows users to request media
@@ -92,6 +95,7 @@ simpler to do so on your LAN network calling the ports:
 [11]: https://hub.docker.com/r/linuxserver/jellyfin
 [12]: https://doc.traefik.io/traefik/
 [13]: https://github.com/jesseduffield/lazydocker
+[14]: https://github.com/sablierapp/sablier
 
 [^1]: Note that even though I use plex on a daily bases, I did not include it in this
 configuration as my instance is running bare-metal to avoid nvidia-docker
