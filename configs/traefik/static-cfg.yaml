@@ -32,7 +32,7 @@ http:
         sablier:
           group: home
           dynamic:
-            displayName: Hourglass
+            displayName: Jellyfin
             refreshFrequency: 2s
             theme: ghost
           sablierUrl: http://sablier:10000
