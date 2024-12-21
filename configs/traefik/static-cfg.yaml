@@ -7,6 +7,15 @@ http:
         certResolver: cloudflare
       entryPoints:
         - websecure
+    kanban:
+      rule: Host(`kanban.{{ env "DOMAIN" }}`)
+      service: kanban
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: cloudflare
+      middlewares:
+        - kanban-sablier@file
     jellyfin:
       rule: Host(`watch.{{ env "DOMAIN" }}`)
       service: jellyfin
@@ -15,19 +24,33 @@ http:
       tls:
         certResolver: cloudflare
       middlewares:
-        - my-sablier@file
+        - jelly-sablier@file
   services:
     plex:
       loadBalancer:
         servers:
           - url: 'http://host.docker.internal:32400'
+    kanban:
+      loadBalancer:
+        servers:
+          - url: "http://kanban:1337"
     jellyfin:
       loadBalancer:
         servers:
           - url: "http://jellyfin:8096"
 
   middlewares:
-    my-sablier:
+    kanban-sablier:
+      plugin:
+        sablier:
+          group: kanban
+          dynamic:
+            displayName: Kanban
+            refreshFrequency: 2s
+            theme: ghost
+          sablierUrl: http://sablier:10000
+          sessionDuration: 1m
+    jelly-sablier:
       plugin:
         sablier:
           group: home
