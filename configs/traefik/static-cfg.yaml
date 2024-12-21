@@ -7,8 +7,33 @@ http:
         certResolver: cloudflare
       entryPoints:
         - websecure
+    jellyfin:
+      rule: Host(`watch.{{ env "DOMAIN" }}`)
+      service: jellyfin
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: cloudflare
+      middlewares:
+        - my-sablier@file
   services:
     plex:
       loadBalancer:
         servers:
           - url: 'http://host.docker.internal:32400'
+    jellyfin:
+      loadBalancer:
+        servers:
+          - url: "http://jellyfin:8096"
+
+  middlewares:
+    my-sablier:
+      plugin:
+        sablier:
+          group: home
+          dynamic:
+            displayName: Hourglass
+            refreshFrequency: 2s
+            theme: ghost
+          sablierUrl: http://sablier:10000
+          sessionDuration: 1m

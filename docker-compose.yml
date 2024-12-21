@@ -6,7 +6,6 @@ services:
     networks:
       - highseas
     ports:
-      - 80:80 # http
       - 443:443 # https
       - 8080:8080 # dashboard (LAN only, do not expose)
     environment:
@@ -33,6 +32,9 @@ services:
       - ${TORRENT_TMP_DIR}:/downloads
     networks:
       - highseas
+    dns:
+      - "1.0.0.1"
+      - "1.1.1.1"
     ports:
       - 9696:9696
     labels:
@@ -103,12 +105,11 @@ services:
 
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
-    container_name: jellyfin
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=${TIMEZONE}
-      - JELLYFIN_PublishedServerUrl=https://watch.alcovian.com
+      - JELLYFIN_PublishedServerUrl=https://watch.${DOMAIN}
     volumes:
       - ./configs/jellyfin:/config
       - ${TV_DIR}:/tvshows
@@ -118,19 +119,14 @@ services:
       - highseas
     ports:
       - 8096:8096
-      # - 8920:8920 #optional
-      # - 7359:7359/udp #optional
-      # - 1900:1900/udp #optional
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.jelly.rule=Host(`watch.${DOMAIN}`)
-      - traefik.http.routers.jelly.tls.certresolver=cloudflare
+      - sablier.enable=true
+      - sablier.group=home
     restart: unless-stopped
 
   torrent:
     build:
       context: ./qbit-pia
-      # context: ./qbit-pia
     environment:
       - PUID=1000
       - PGID=1000
@@ -157,8 +153,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TIMEZONE}
-      - OVERSEERR__URL=https://oversee.alcovian.com
-      # - OVERSEERR__URL=http://localhost:5055
+      - OVERSEERR__URL=http://oversee:5055
       - DISCORD__TOKEN=${DISCORD_TOKEN}
       - OVERSEERR__API=${OVERSEERR_TOKEN}
       - PARTIAL_SEASONS=true
@@ -194,6 +189,9 @@ services:
       - LOG_LEVEL=info
     networks:
       - highseas
+    dns:
+      - "1.0.0.1"
+      - "1.1.1.1"
     ports:
       - 8191:8191
     restart: unless-stopped
@@ -206,6 +204,22 @@ services:
       - "DOMAIN_NAMES=${DOMAIN}"
       - "RECORD_TYPES=A"
       - "INTERVAL=5"
+
+  sablier:
+    image: sablierapp/sablier:1.8.1
+    command:
+      - start
+      - --provider.name=docker
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.sablier.rule=Host(`throttle.${DOMAIN}`)
+      - traefik.http.routers.sablier.tls.certresolver=cloudflare
+    ports:
+      - 10000:10000
+    networks:
+      - highseas
 
 networks:
   highseas:
