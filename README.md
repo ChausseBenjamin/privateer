@@ -11,7 +11,7 @@
 - Updates cloudflare DNS records with the host's public IP address
 
 ### sablier ([sablier][14]):
-- Automatically shuts down user facing services when they are not in use
+- Automatically shuts down non-utilized services[^4]
 
 ### **vpn** ([gluetun][3])
 - Protects sensitive connections with a VPN
@@ -97,7 +97,7 @@ simpler to do so on your LAN network calling the ports:
 [13]: https://github.com/jesseduffield/lazydocker
 [14]: https://github.com/sablierapp/sablier
 
-[^1]: Note that even though I use plex on a daily bases, I did not include it in this
+[^1]: Note that even though I use plex on a daily basis, I did not include it in this
 configuration as my instance is running bare-metal to avoid nvidia-docker
 shenanigans. In this usecase, jellyfin is used as a fallback which works out of
 the box even without plex being configured.
@@ -108,3 +108,6 @@ the port being randomly assigned and stored in a json file. Look at the qbit-pia
 see the changes that needed to be made.
 
 [^3]: `:8080` is the default port but it is already in use by Traefik
+
+[^4]: Some services like the torrent client must always remain online while others can be shut down
+when unused (ex: jellyfin).

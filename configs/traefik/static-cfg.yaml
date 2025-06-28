@@ -1,44 +1,49 @@
+---
 http:
   routers:
     plex:
-      rule: Host(`plex.{{ env "DOMAIN" }}`)
+      rule: Host(`plex.{{ env "DOMAIN" }}`) || Host(`plex.{{ env "SHORT_DOMAIN" }}`)
       service: plex
       tls:
         certResolver: cloudflare
-      entryPoints:
-        - websecure
+        domains:
+          - main: ['plex.{{ env "DOMAIN" }}', 'plex.{{ env "SHORT_DOMAIN" }}']
+      entryPoints: [websecure]
     kanban:
       rule: Host(`kanban.{{ env "DOMAIN" }}`)
       service: kanban
-      entryPoints:
-        - websecure
+      entryPoints: [websecure]
       tls:
         certResolver: cloudflare
-      middlewares:
-        - kanban-sablier@file
+      middlewares: [kanban-sablier@file]
     jellyfin:
-      rule: Host(`watch.{{ env "DOMAIN" }}`)
+      rule: Host(`watch.{{ env "DOMAIN" }}`) || Host(`watch.{{ env "SHORT_DOMAIN" }}`)
       service: jellyfin
-      entryPoints:
-        - websecure
       tls:
         certResolver: cloudflare
-      middlewares:
-        - jelly-sablier@file
+        domains:
+          - main: ['watch.{{ env "DOMAIN" }}', 'watch.{{ env "SHORT_DOMAIN" }}']
+      entryPoints: [websecure]
+    # jellyfin:
+    #   rule: Host(`watch.{{ env "DOMAIN" }}`)
+    #   service: jellyfin
+    #   entryPoints: [websecure]
+    #   tls:
+    #     certResolver: cloudflare
+    #   middlewares: [jelly-sablier@file]
   services:
     plex:
       loadBalancer:
         servers:
-          - url: 'http://host.docker.internal:32400'
+          - url: http://host.docker.internal:32400
     kanban:
       loadBalancer:
         servers:
-          - url: "http://kanban:1337"
+          - url: http://kanban:1337
     jellyfin:
       loadBalancer:
         servers:
-          - url: "http://jellyfin:8096"
-
+          - url: http://host.docker.internal:8096
   middlewares:
     kanban-sablier:
       plugin:
@@ -49,14 +54,14 @@ http:
             refreshFrequency: 2s
             theme: ghost
           sablierUrl: http://sablier:10000
-          sessionDuration: 1m
-    jelly-sablier:
-      plugin:
-        sablier:
-          group: home
-          dynamic:
-            displayName: Jellyfin
-            refreshFrequency: 2s
-            theme: ghost
-          sablierUrl: http://sablier:10000
-          sessionDuration: 1m
+          sessionDuration: 5m
+    # jelly-sablier:
+    #   plugin:
+    #     sablier:
+    #       group: home
+    #       dynamic:
+    #         displayName: Jellyfin
+    #         refreshFrequency: 2s
+    #         theme: ghost
+    #       sablierUrl: http://sablier:10000
+    #       sessionDuration: 3m
