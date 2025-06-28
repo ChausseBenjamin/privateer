@@ -1,0 +1,31 @@
+---
+services:
+  kanban:
+    image: linuxserver/planka:latest
+    networks: [highseas]
+    restart: unless-stopped
+    volumes: [./planka:/config]
+    labels: [sablier.enable=true, sablier.group=kanban]
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+      - BASE_URL=https://kanban.${DOMAIN}
+      - DATABASE_URL=postgresql://${ADMIN_USER}:${ADMIN_PASSWD}@planka-db:5432/planka
+      - DEFAULT_ADMIN_USERNAME=${ADMIN_USER}
+      - DEFAULT_ADMIN_PASSWORD=${ADMIN_PASSWD}
+      - DEFAULT_ADMIN_NAME=${ADMIN_PASSWD}
+      - DEFAULT_ADMIN_EMAIL=${EMAIL}
+      - SECRET_KEY=${ADMIN_PASSWD}
+      - TRUST_PROXY=1
+    ports: [1337:1337]
+  planka-db:
+    image: postgres:latest
+    networks: [highseas]
+    restart: unless-stopped
+    labels: [sablier.enable=true, sablier.group=kanban]
+    volumes: [./planka-db:/var/lib/postgresql/data]
+    environment:
+      - POSTGRES_DB=planka
+      - POSTGRES_USER=${ADMIN_USER}
+      - POSTGRES_PASSWORD=${ADMIN_PASSWD}

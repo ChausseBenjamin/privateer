@@ -1,0 +1,20 @@
+---
+services:
+  dyndns:
+    image: favonia/cloudflare-ddns:latest
+    network_mode: host
+    user: 1000:1000
+    read_only: true
+    cap_drop: [all]
+    security_opt: [no-new-privileges:true]
+    environment:
+      - CLOUDFLARE_API_TOKEN=${DYNDNS_CLOUDFLARE}
+      - DOMAINS=${DOMAIN},${SHORT_DOMAIN}
+      - PROXIED=false
+    restart: unless-stopped
+  dns:
+    image: strm/dnsmasq
+    restart: unless-stopped
+    volumes: [./dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf]
+    ports: [53:53, 53:53/udp]
+    cap_add: [NET_ADMIN]

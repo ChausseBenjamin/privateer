@@ -1,0 +1,16 @@
+---
+services:
+  torrent:
+    build:
+      context: ./qbit-pia
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+      - WEBUI_PORT=4242
+      - TORRENTING_PORT=6881
+    volumes:
+      - ./qbittorrent:/config
+      - ${TORRENT_TMP_DIR}:/downloads
+      - ./gluetun/piaportforward.json:/etc/piaportforward.json  # Sync Torrent port config from PIA
+    restart: unless-stopped

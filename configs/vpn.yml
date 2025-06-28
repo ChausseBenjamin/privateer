@@ -1,0 +1,27 @@
+---
+services:
+  vpn:
+    image: qmcgaw/gluetun:latest
+    cap_add: [NET_ADMIN]
+    privileged: true
+    volumes: [./gluetun:/gluetun, /dev/net/tun:/dev/net/tun]
+    networks: [highseas]
+    devices: [/dev/net/tun:/dev/net/tun]
+    ports:
+      # Qbittorrent
+      - 4242:4242  # Traefik exposes the smallest port
+      - 6881:6881
+      - 6881:6881/udp
+    environment:
+      - VPN_SERVICE_PROVIDER=private internet access
+      - OPENVPN_USER=${VPN_USER}
+      - OPENVPN_PASSWORD=${VPN_PASSWD}
+      - VPN_PORT_FORWARDING=on
+      - SERVER_REGION=${VPN_REGION}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.torrent.tls.certresolver=cloudflare
+      - traefik.http.routers.torrent.rule=Host(`torrent.${DOMAIN}`) || Host(`torrent.${SHORT_DOMAIN}`)
+      - traefik.http.routers.torrent.tls.domains[0].main=torrent.${DOMAIN}
+      - traefik.http.routers.torrent.tls.domains[1].main=torrent.${SHORT_DOMAIN}
+    restart: unless-stopped

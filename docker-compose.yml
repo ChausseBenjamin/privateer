@@ -1,4 +1,12 @@
 ---
+include:
+  - ./configs/dns.yml # Both Internal and external DNS
+  - ./configs/kanban.yml
+  - ./configs/manage.yml # Torrent API + Cloudflare Proxy
+  - ./configs/movies.yml # SD + 4K Instances
+  - ./configs/oversee.yml # Jellyseerr + Discord Bot + Wizard
+  - ./configs/tv.yml # SD + 4K Instances
+  - ./configs/vpn.yml
 services:
   traefik:
     image: traefik:v3.1
@@ -22,229 +30,18 @@ services:
       - ./configs/traefik/static-cfg.yaml:/etc/traefik/static-cfg.yaml
       - ./configs/traefik/certs:/var/traefik/certs:rw
     restart: unless-stopped
-  dns:
-    image: strm/dnsmasq
-    restart: unless-stopped
-    volumes: [./configs/dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf]
-    ports: [53:53, 53:53/udp]
-    cap_add: [NET_ADMIN]
-  resolver:
-    image: linuxserver/prowlarr:latest
-    environment: [PUID=1000, PGID=1000, 'TZ=${TIMEZONE}']
-    volumes: [./configs/prowlarr:/config, '${TORRENT_TMP_DIR}:/downloads']
-    networks: [highseas]
-    dns: [1.0.0.1, 1.1.1.1]
-    ports: [9696:9696]
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.resolve.tls.certresolver=cloudflare
-      - traefik.http.routers.resolve.rule=Host(`resolve.${DOMAIN}`) || Host(`resolve.${SHORT_DOMAIN}`)
-      - traefik.http.routers.resolve.tls.domains[0].main=resolve.${DOMAIN}
-      - traefik.http.routers.resolve.tls.domains[1].main=resolve.${SHORT_DOMAIN}
-    restart: unless-stopped
-  4ktv:
-    image: linuxserver/sonarr:latest
-    environment: [PUID=1000, PGID=1000]
-    volumes:
-      - ./configs/4k-sonarr:/config
-      - ${TV_4K_DIR}:/tv
-      - ${TORRENT_TMP_DIR}:/downloads
-    networks: [highseas]
-    ports: [8990:8989]
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.4ktv.tls.certresolver=cloudflare
-      - traefik.http.routers.4ktv.rule=Host(`4ktv.${DOMAIN}`) || Host(`4ktv.${SHORT_DOMAIN}`)
-      - traefik.http.routers.4ktv.tls.domains[0].main=4ktv.${DOMAIN}
-      - traefik.http.routers.4ktv.tls.domains[1].main=4ktv.${SHORT_DOMAIN}
-    restart: unless-stopped
-  tv:
-    image: linuxserver/sonarr:latest
-    environment: [PUID=1000, PGID=1000]
-    volumes:
-      - ./configs/sonarr:/config
-      - ${TV_DIR}:/tv
-      - ${TORRENT_TMP_DIR}:/downloads
-    networks: [highseas]
-    ports: [8989:8989]
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.tv.tls.certresolver=cloudflare
-      - traefik.http.routers.tv.rule=Host(`tv.${DOMAIN}`) || Host(`tv.${SHORT_DOMAIN}`)
-      - traefik.http.routers.tv.tls.domains[0].main=tv.${DOMAIN}
-      - traefik.http.routers.tv.tls.domains[1].main=tv.${SHORT_DOMAIN}
-    restart: unless-stopped
-  4kmovies:
-    image: linuxserver/radarr:latest
-    environment: [PUID=1000, PGID=1000]
-    volumes:
-      - ./configs/4k-radarr:/config
-      - ${MOVIE_4K_DIR}:/movies
-      - ${TORRENT_TMP_DIR}:/downloads
-    networks: [highseas]
-    ports: [7879:7878]
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.4kmovies.tls.certresolver=cloudflare
-      - traefik.http.routers.4kmovies.rule=Host(`4kmovies.${DOMAIN}`) || Host(`4kmovies.${SHORT_DOMAIN}`)
-      - traefik.http.routers.4kmovies.tls.domains[0].main=4kmovies.${DOMAIN}
-      - traefik.http.routers.4kmovies.tls.domains[1].main=4kmovies.${SHORT_DOMAIN}
-    restart: unless-stopped
-  movies:
-    image: linuxserver/radarr:latest
-    environment: [PUID=1000, PGID=1000]
-    volumes:
-      - ./configs/radarr:/config
-      - ${MOVIE_DIR}:/movies
-      - ${TORRENT_TMP_DIR}:/downloads
-    networks: [highseas]
-    ports: [7878:7878]
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.movies.tls.certresolver=cloudflare
-      - traefik.http.routers.movies.rule=Host(`movies.${DOMAIN}`) || Host(`movies.${SHORT_DOMAIN}`)
-      - traefik.http.routers.movies.tls.domains[0].main=movies.${DOMAIN}
-      - traefik.http.routers.movies.tls.domains[1].main=movies.${SHORT_DOMAIN}
-    restart: unless-stopped
-  wizard:
-    image: ghcr.io/wizarrrr/wizarr
-    environment: [DISABLE_BUILTIN_AUTH=true, 'TZ=${TIMEZONE}']
-    volumes:
-      - ./configs/wizarr/cfg:/data/wizard_steps
-      - ./configs/wizarr/db:/data/database
-    networks: [highseas]
-    extra_hosts: [host.docker.internal:host-gateway]
-    ports: [5690:5690]
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.wizarr.tls.certresolver=cloudflare
-      - traefik.http.routers.wizarr.rule=Host(`welcome.${DOMAIN}`) || Host(`welcome.${SHORT_DOMAIN}`)
-      - traefik.http.routers.wizarr.tls.domains[0].main=welcome.${DOMAIN}
-      - traefik.http.routers.wizarr.tls.domains[1].main=welcome.${SHORT_DOMAIN}
-    restart: unless-stopped
-  oversee:
-    image: fallenbagel/jellyseerr:latest
-    environment: [LOG_LEVEL=debug, 'TZ=${TIMEZONE}', PORT=5055]
-    volumes: [./configs/jellyseerr:/app/config]
-    networks: [highseas]
-    extra_hosts: [host.docker.internal:host-gateway]
-    ports: [5055:5055, 5055:5055/tcp]
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.overseer.tls.certresolver=cloudflare
-      - traefik.http.routers.overseer.rule=Host(`manage.${DOMAIN}`) || Host(`manage.${SHORT_DOMAIN}`)
-      - traefik.http.routers.overseer.tls.domains[0].main=manage.${DOMAIN}
-      - traefik.http.routers.overseer.tls.domains[1].main=manage.${SHORT_DOMAIN}
-    restart: unless-stopped
-  torrent:
-    build:
-      context: ./qbit-pia
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=${TIMEZONE}
-      - WEBUI_PORT=4242
-      - TORRENTING_PORT=6881
-    volumes:
-      - ./configs/qbittorrent:/config
-      - ${TORRENT_TMP_DIR}:/downloads
-      - ./configs/gluetun/piaportforward.json:/etc/piaportforward.json  # Sync Torrent port config from PIA
-    network_mode: service:vpn
-    depends_on:
-      - vpn  # Otherwise piaconf can be empty/out-of-date
-    restart: unless-stopped
-  kanban:
-    image: linuxserver/planka:latest
-    networks: [highseas]
-    restart: unless-stopped
-    volumes: [./configs/planka:/config]
-    labels: [sablier.enable=true, sablier.group=kanban]
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=${TIMEZONE}
-      - BASE_URL=https://kanban.${DOMAIN}
-      - DATABASE_URL=postgresql://${ADMIN_USER}:${ADMIN_PASSWD}@planka-db:5432/planka
-      - DEFAULT_ADMIN_USERNAME=${ADMIN_USER}
-      - DEFAULT_ADMIN_PASSWORD=${ADMIN_PASSWD}
-      - DEFAULT_ADMIN_NAME=${ADMIN_PASSWD}
-      - DEFAULT_ADMIN_EMAIL=${EMAIL}
-      - SECRET_KEY=${ADMIN_PASSWD}
-      - TRUST_PROXY=1
-    ports: [1337:1337]
-  planka-db:
-    image: postgres:latest
-    networks: [highseas]
-    restart: unless-stopped
-    labels: [sablier.enable=true, sablier.group=kanban]
-    volumes: [./configs/planka-db:/var/lib/postgresql/data]
-    environment:
-      - POSTGRES_DB=planka
-      - POSTGRES_USER=${ADMIN_USER}
-      - POSTGRES_PASSWORD=${ADMIN_PASSWD}
-  bot:
-    image: thomst08/requestrr
-    networks: [highseas]
-    ports: [4545:4545]
-    volumes: [./configs/requestrr:/root/config]
-    environment: [PUID=1000, PGID=1000, 'TZ=${TIMEZONE}']
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.bot.tls.certresolver=cloudflare
-      - traefik.http.routers.bot.rule=Host(`bot.${DOMAIN}`) || Host(`bot.${SHORT_DOMAIN}`)
-      - traefik.http.routers.bot.tls.domains[0].main=bot.${DOMAIN}
-      - traefik.http.routers.bot.tls.domains[1].main=bot.${SHORT_DOMAIN}
-    restart: unless-stopped
-  vpn:
-    image: qmcgaw/gluetun:latest
-    cap_add: [NET_ADMIN]
-    privileged: true
-    volumes: [./configs/gluetun:/gluetun, /dev/net/tun:/dev/net/tun]
-    networks: [highseas]
-    devices: [/dev/net/tun:/dev/net/tun]
-    ports:
-      # Qbittorrent
-      - 4242:4242  # Traefik exposes the smallest port
-      - 6881:6881
-      - 6881:6881/udp
-    environment:
-      - VPN_SERVICE_PROVIDER=private internet access
-      - OPENVPN_USER=${VPN_USER}
-      - OPENVPN_PASSWORD=${VPN_PASSWD}
-      - VPN_PORT_FORWARDING=on
-      - SERVER_REGION=${VPN_REGION}
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.torrent.tls.certresolver=cloudflare
-      - traefik.http.routers.torrent.rule=Host(`torrent.${DOMAIN}`) || Host(`torrent.${SHORT_DOMAIN}`)
-      - traefik.http.routers.torrent.tls.domains[0].main=torrent.${DOMAIN}
-      - traefik.http.routers.torrent.tls.domains[1].main=torrent.${SHORT_DOMAIN}
-    restart: unless-stopped
-  proxy:
-    image: ghcr.io/flaresolverr/flaresolverr:latest
-    environment: [LOG_LEVEL=info]
-    networks: [highseas]
-    dns: [1.0.0.1, 1.1.1.1]
-    ports: [8191:8191]
-    restart: unless-stopped
-  dyndns:
-    image: favonia/cloudflare-ddns:latest
-    network_mode: host
-    restart: unless-stopped
-    user: 1000:1000
-    read_only: true
-    cap_drop: [all]
-    security_opt: [no-new-privileges:true]
-    environment:
-      - CLOUDFLARE_API_TOKEN=${DYNDNS_CLOUDFLARE}
-      - DOMAINS=${DOMAIN},${SHORT_DOMAIN}
-      - PROXIED=false
   sablier:
     image: sablierapp/sablier:1.8.1
     command: [start, --provider.name=docker]
     volumes: [/var/run/docker.sock:/var/run/docker.sock]
     networks: [highseas]
     restart: unless-stopped
+  torrent:
+    extends:
+      file: ./configs/torrent.yml
+      service: torrent
+    depends_on:
+      - vpn  # Otherwise piaconf can be empty/out-of-date
 networks:
   highseas:
     driver: bridge

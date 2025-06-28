@@ -1,0 +1,34 @@
+---
+services:
+  movies:
+    image: linuxserver/radarr:latest
+    environment: [PUID=1000, PGID=1000]
+    volumes:
+      - ./radarr:/config
+      - ${MOVIE_DIR}:/movies
+      - ${TORRENT_TMP_DIR}:/downloads
+    networks: [highseas]
+    ports: [7878:7878]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.movies.tls.certresolver=cloudflare
+      - traefik.http.routers.movies.rule=Host(`movies.${DOMAIN}`) || Host(`movies.${SHORT_DOMAIN}`)
+      - traefik.http.routers.movies.tls.domains[0].main=movies.${DOMAIN}
+      - traefik.http.routers.movies.tls.domains[1].main=movies.${SHORT_DOMAIN}
+    restart: unless-stopped
+  4kmovies:
+    image: linuxserver/radarr:latest
+    environment: [PUID=1000, PGID=1000]
+    volumes:
+      - ./4k-radarr:/config
+      - ${MOVIE_4K_DIR}:/movies
+      - ${TORRENT_TMP_DIR}:/downloads
+    networks: [highseas]
+    ports: [7879:7878]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.4kmovies.tls.certresolver=cloudflare
+      - traefik.http.routers.4kmovies.rule=Host(`4kmovies.${DOMAIN}`) || Host(`4kmovies.${SHORT_DOMAIN}`)
+      - traefik.http.routers.4kmovies.tls.domains[0].main=4kmovies.${DOMAIN}
+      - traefik.http.routers.4kmovies.tls.domains[1].main=4kmovies.${SHORT_DOMAIN}
+    restart: unless-stopped

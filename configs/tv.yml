@@ -1,0 +1,34 @@
+---
+services:
+  tv:
+    image: linuxserver/sonarr:latest
+    environment: [PUID=1000, PGID=1000]
+    volumes:
+      - ./sonarr:/config
+      - ${TV_DIR}:/tv
+      - ${TORRENT_TMP_DIR}:/downloads
+    networks: [highseas]
+    ports: [8989:8989]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.tv.tls.certresolver=cloudflare
+      - traefik.http.routers.tv.rule=Host(`tv.${DOMAIN}`) || Host(`tv.${SHORT_DOMAIN}`)
+      - traefik.http.routers.tv.tls.domains[0].main=tv.${DOMAIN}
+      - traefik.http.routers.tv.tls.domains[1].main=tv.${SHORT_DOMAIN}
+    restart: unless-stopped
+  4ktv:
+    image: linuxserver/sonarr:latest
+    environment: [PUID=1000, PGID=1000]
+    volumes:
+      - ./4k-sonarr:/config
+      - ${TV_4K_DIR}:/tv
+      - ${TORRENT_TMP_DIR}:/downloads
+    networks: [highseas]
+    ports: [8990:8989]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.4ktv.tls.certresolver=cloudflare
+      - traefik.http.routers.4ktv.rule=Host(`4ktv.${DOMAIN}`) || Host(`4ktv.${SHORT_DOMAIN}`)
+      - traefik.http.routers.4ktv.tls.domains[0].main=4ktv.${DOMAIN}
+      - traefik.http.routers.4ktv.tls.domains[1].main=4ktv.${SHORT_DOMAIN}
+    restart: unless-stopped
