@@ -2,9 +2,9 @@
 include:
   - ./configs/dns.yml # Both Internal and external DNS
   - ./configs/kanban.yml
-  - ./configs/manage.yml # Torrent API + Cloudflare Proxy
+  - ./configs/resolve.yml # Torrent API + Cloudflare Proxy
   - ./configs/movies.yml # SD + 4K Instances
-  - ./configs/oversee.yml # Jellyseerr + Discord Bot + Wizard
+  - ./configs/manage.yml # Jellyseerr + Discord Bot + Wizard
   - ./configs/tv.yml # SD + 4K Instances
   - ./configs/vpn.yml
 services:
@@ -40,6 +40,7 @@ services:
     extends:
       file: ./configs/torrent.yml
       service: torrent
+    network_mode: "service:vpn"
     depends_on:
       - vpn  # Otherwise piaconf can be empty/out-of-date
 networks:

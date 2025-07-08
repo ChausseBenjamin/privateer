@@ -1,22 +1,45 @@
 ---
 services:
-  resolver:
-    image: linuxserver/prowlarr:latest
-    environment: [PUID=1000, PGID=1000, 'TZ=${TIMEZONE}']
-    volumes: [./prowlarr:/config, '${TORRENT_TMP_DIR}:/downloads']
+  oversee:
+    image: fallenbagel/jellyseerr:latest
+    environment: [LOG_LEVEL=debug, 'TZ=${TIMEZONE}', PORT=5055]
+    volumes: [./jellyseerr:/app/config]
     networks: [highseas]
-    dns: [1.0.0.1, 1.1.1.1]
-    ports: [9696:9696]
+    extra_hosts: [host.docker.internal:host-gateway]
+    ports: [5055:5055, 5055:5055/tcp]
     labels:
       - traefik.enable=true
-      - traefik.http.routers.resolve.tls.certresolver=cloudflare
-      - traefik.http.routers.resolve.rule=Host(`resolve.${DOMAIN}`) || Host(`resolve.${SHORT_DOMAIN}`)
-      - traefik.http.routers.resolve.tls.domains[0].main=resolve.${DOMAIN}
-      - traefik.http.routers.resolve.tls.domains[1].main=resolve.${SHORT_DOMAIN}
-  proxy:
-    image: ghcr.io/flaresolverr/flaresolverr:latest
-    environment: [LOG_LEVEL=info]
+      - traefik.http.routers.overseer.tls.certresolver=cloudflare
+      - traefik.http.routers.overseer.rule=Host(`manage.${DOMAIN}`) || Host(`manage.${SHORT_DOMAIN}`)
+      - traefik.http.routers.overseer.tls.domains[0].main=manage.${DOMAIN}
+      - traefik.http.routers.overseer.tls.domains[1].main=manage.${SHORT_DOMAIN}
+    restart: unless-stopped
+  bot:
+    image: thomst08/requestrr
     networks: [highseas]
-    dns: [1.0.0.1, 1.1.1.1]
-    ports: [8191:8191]
+    ports: [4545:4545]
+    volumes: [./requestrr:/root/config]
+    environment: [PUID=1000, PGID=1000, 'TZ=${TIMEZONE}']
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.bot.tls.certresolver=cloudflare
+      - traefik.http.routers.bot.rule=Host(`bot.${DOMAIN}`) || Host(`bot.${SHORT_DOMAIN}`)
+      - traefik.http.routers.bot.tls.domains[0].main=bot.${DOMAIN}
+      - traefik.http.routers.bot.tls.domains[1].main=bot.${SHORT_DOMAIN}
+    restart: unless-stopped
+  wizard:
+    image: ghcr.io/wizarrrr/wizarr
+    environment: [DISABLE_BUILTIN_AUTH=true, 'TZ=${TIMEZONE}']
+    volumes:
+      - ./wizarr/cfg:/data/wizard_steps
+      - ./wizarr/db:/data/database
+    networks: [highseas]
+    extra_hosts: [host.docker.internal:host-gateway]
+    ports: [5690:5690]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.wizarr.tls.certresolver=cloudflare
+      - traefik.http.routers.wizarr.rule=Host(`welcome.${DOMAIN}`) || Host(`welcome.${SHORT_DOMAIN}`)
+      - traefik.http.routers.wizarr.tls.domains[0].main=welcome.${DOMAIN}
+      - traefik.http.routers.wizarr.tls.domains[1].main=welcome.${SHORT_DOMAIN}
     restart: unless-stopped

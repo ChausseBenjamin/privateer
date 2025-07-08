@@ -4,7 +4,10 @@ services:
     image: qmcgaw/gluetun:latest
     cap_add: [NET_ADMIN]
     privileged: true
-    volumes: [./gluetun:/gluetun, /dev/net/tun:/dev/net/tun]
+    volumes:
+      - ./gluetun:/gluetun
+      - /dev/net/tun:/dev/net/tun
+      - ./gluetun/portcfg:/tmp/gluetun
     networks: [highseas]
     devices: [/dev/net/tun:/dev/net/tun]
     ports:

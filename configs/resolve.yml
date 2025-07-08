@@ -1,0 +1,22 @@
+---
+services:
+  resolver:
+    image: linuxserver/prowlarr:latest
+    environment: [PUID=1000, PGID=1000, 'TZ=${TIMEZONE}']
+    volumes: [./prowlarr:/config, '${TORRENT_TMP_DIR}:/downloads']
+    networks: [highseas]
+    dns: [1.0.0.1, 1.1.1.1]
+    ports: [9696:9696]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.resolve.tls.certresolver=cloudflare
+      - traefik.http.routers.resolve.rule=Host(`resolve.${DOMAIN}`) || Host(`resolve.${SHORT_DOMAIN}`)
+      - traefik.http.routers.resolve.tls.domains[0].main=resolve.${DOMAIN}
+      - traefik.http.routers.resolve.tls.domains[1].main=resolve.${SHORT_DOMAIN}
+  proxy:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    environment: [LOG_LEVEL=info]
+    networks: [highseas]
+    dns: [1.0.0.1, 1.1.1.1]
+    ports: [8191:8191]
+    restart: unless-stopped
